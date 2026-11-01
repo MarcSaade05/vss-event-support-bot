@@ -1,9 +1,12 @@
 .venv/
+venv/
 __pycache__/
 *.pyc
 .env
-.python-version
+.env.*
+!.env.example
 .DS_Store
 Thumbs.db
 *.log
 .vscode/
+.pytest_cache/

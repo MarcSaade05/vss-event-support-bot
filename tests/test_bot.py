@@ -29,7 +29,7 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("text", args)
             self.assertEqual(args["reply_to_message_id"], 99)
             self.assertTrue(args["protect_content"])
-            self.assertEqual(update.message.reply_text.call_args.kwargs["text"], bot.TEXT["en"]["sent"])
+            self.assertEqual(update.message.reply_text.call_args.kwargs["text"], bot.TEXT["sent"])
 
     async def test_html_identity_escaped(self):
         update, ctx = fixture()
@@ -79,7 +79,7 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         ctx.bot.copy_message.side_effect = TimedOut()
         await bot.forward_to_group(update, ctx)
         ctx.bot.copy_message.assert_awaited_once()
-        self.assertEqual(update.message.reply_text.call_args.kwargs["text"], bot.TEXT["en"]["failed"])
+        self.assertEqual(update.message.reply_text.call_args.kwargs["text"], bot.TEXT["failed"])
 
     async def test_rate_limit_blocks_new_message(self):
         update, ctx = fixture()
@@ -88,7 +88,7 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         update.message.message_id += 1
         await bot.forward_to_group(update, ctx)
         ctx.bot.copy_message.assert_awaited_once()
-        self.assertEqual(update.message.reply_text.call_args.kwargs["text"], bot.TEXT["en"]["busy"])
+        self.assertEqual(update.message.reply_text.call_args.kwargs["text"], bot.TEXT["busy"])
 
     async def test_topic_and_sender_without_username(self):
         update, ctx = fixture()
@@ -98,13 +98,21 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(ctx.bot.copy_message.call_args.kwargs["message_thread_id"], 123)
         self.assertIn("tg://user?id=42", ctx.bot.send_message.call_args.kwargs["text"])
 
-    async def test_french_and_unknown_command(self):
-        update, ctx = fixture(language="fr-FR")
-        await bot.start(update, ctx)
-        self.assertIn("bénévole", update.message.reply_text.call_args.kwargs["text"])
-        await bot.privacy(update, ctx)
-        self.assertIn("pas anonyme", update.message.reply_text.call_args.kwargs["text"])
+    async def test_english_for_every_profile_language(self):
+        for language in ("fr-FR", "en", "ar", None):
+            update, ctx = fixture(language=language)
+            await bot.start(update, ctx)
+            self.assertIn("exact location", update.message.reply_text.call_args.kwargs["text"])
+            await bot.privacy(update, ctx)
+            self.assertIn("not anonymous", update.message.reply_text.call_args.kwargs["text"])
+            await bot.forward_to_group(update, ctx)
+            self.assertIn("Identity shared", ctx.bot.send_message.call_args.kwargs["text"])
+            self.assertEqual(update.message.reply_text.call_args.kwargs["text"], bot.TEXT["sent"])
+
+    async def test_unknown_command_does_not_relay(self):
+        update, ctx = fixture()
         await bot.unknown_command(update, ctx)
+        self.assertIn("Unknown command", update.message.reply_text.call_args.kwargs["text"])
         ctx.bot.copy_message.assert_not_awaited()
 
     async def test_explicit_throttling_retried(self):

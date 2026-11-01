@@ -1,10 +1,12 @@
 # VSS — Telegram Support Bot
 
-**Helping victims of sexual and gender-based violence reach out discreetly and seek support when they do not feel safe or comfortable coming forward in person.**
+**A discreet way for students to alert trained responders when they feel unsafe at an École Polytechnique social event.**
 
-VSS stands for *violences sexistes et sexuelles*, the French term for sexual and gender-based violence. This project provides a private point of contact with a volunteer VSS support team. It is intended to help people take a first step toward receiving support from trained responders and, where appropriate, being connected with qualified professionals.
+Designed for École Polytechnique’s international student community, this English-language Telegram bot helps anyone who feels unsafe, uncomfortable or affected by harassment or sexual or gender-based violence reach the event’s designated VSS response team without having to approach someone in person.
 
-Someone who feels unsafe, has experienced harassment or violence, or wants help can describe their situation through a private Telegram conversation. The bot relays their message to the designated team so that a human responder can follow up. The organization operating the service is responsible for staffing the team, training its members, and arranging professional referrals.
+Users can privately describe what is happening and share their location, allowing trained responders on duty to contact them and, where possible, come to them in person. Whether at a party, a student gathering or another social event, the goal is to make asking for help easier and more discreet.
+
+VSS stands for *violences sexistes et sexuelles*, the French term for sexual and gender-based violence. The bot connects users with the volunteer response team; human responders provide assistance and can help people access professional support when appropriate. Event organizers are responsible for ensuring that trained responders are on duty and that attendees know how to reach them.
 
 **Privacy:** the conversation is private, but the current implementation is **not anonymous to the support team**. The sender's Telegram name, user ID and profile link accompany the message so that responders can contact them. The bot does not publicly publish reports.
 
@@ -13,12 +15,12 @@ Someone who feels unsafe, has experienced harassment or violence, or wants help 
 ## How it works
 
 1. The user opens the bot and sends `/start` or `/help` to read how the service works.
-2. They share their location and whatever they feel comfortable describing, using text, photos, documents or voice messages.
+2. They share their exact location (event, room or nearby landmark) and describe what help they need, using text, photos, documents or voice messages.
 3. The bot sends an identity header to the configured team group, then copies the original message as a reply to that header.
 4. After Telegram confirms the copy, the user receives a delivery confirmation.
-5. A team member can contact the sender separately through Telegram, depending on availability.
+5. A trained responder on duty can contact the sender through Telegram, clarify their location and, where possible, come to help in person.
 
-The bot provides French and English user messages. French is selected when the Telegram profile language begins with `fr`; English is used otherwise. Messages sent without `/start` are also relayed, so the bot's public description should explain that messages and identity are shared with the team.
+All bot messages and command descriptions are in English, regardless of the user’s Telegram profile language. Messages sent without `/start` are also relayed, so the bot's public description should explain that messages and identity are shared with the team.
 
 ## Features
 
@@ -107,7 +109,7 @@ Coordinate changes with the support team before restarting an existing deploymen
 python -m unittest discover -s tests -v
 ```
 
-The tests simulate Telegram and cover long messages, caption preservation, HTML escaping, ignored group messages, duplicate handling, delivery confirmations, timeouts, throttling retries, per-user limits, language selection, configuration and cache expiry. No real token or report is required.
+The tests simulate Telegram and cover long messages, caption preservation, HTML escaping, ignored group messages, duplicate handling, delivery confirmations, timeouts, throttling retries, per-user limits, English-only responses, configuration and cache expiry. Integration tests also exercise real Telegram-library request serialization and application dispatch against an in-memory API simulator. No real token or report is required.
 
 For a live check, verify `/start`, `/privacy`, text, a captioned photo, a voice message, a document, sender profile links and any configured forum topic.
 
@@ -129,6 +131,7 @@ The destination group ID is not an authentication token, but real group IDs shou
 | --- | --- |
 | `bot.py` | Configuration, commands, relay and error handling |
 | `tests/test_bot.py` | Unit tests and asynchronous handler tests |
+| `tests/test_integration.py` | Application dispatch and Telegram API serialization tests |
 | `.env.example` | Configuration template without real credentials |
 | `requirements.txt` | Pinned Python dependencies |
 | `Procfile` | Worker startup command |

@@ -19,22 +19,12 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 
 LOG = logging.getLogger("vss_bot")
 TEXT = {
-    "fr": {
-        "start": "Bonjour. Ce bot transmet vos messages à l’équipe bénévole VSS (violences sexistes et sexuelles). Indiquez où vous êtes et ce que vous souhaitez partager, à votre rythme. Texte, photos, documents et messages vocaux sont acceptés.\n\nVotre nom et votre profil Telegram seront transmis avec votre message. /privacy explique le traitement des données. L’équipe vous recontacte séparément selon sa disponibilité ; ce bot n’est pas un service d’urgence.",
-        "privacy": "Vos messages et votre identité Telegram sont transmis au groupe configuré de l’équipe VSS. Ce dispositif n’est pas anonyme. Le bot n’enregistre ni contenu de signalement ni identité dans un fichier ou une base de données. Telegram et les membres du groupe peuvent conserver les messages. Les journaux techniques du bot ne contiennent pas le texte des signalements. Pour une demande concernant vos messages, contactez l’équipe. Évitez les informations personnelles non nécessaires.",
-        "sent": "✅ Message transmis à l’équipe VSS. Cela ne signifie pas encore qu’un bénévole l’a lu. L’équipe pourra vous recontacter via Telegram selon sa disponibilité.",
-        "failed": "⚠️ La transmission n’a pas pu être confirmée. Votre message a peut-être été reçu. Contactez directement l’équipe si nécessaire ; si vous réessayez, précisez qu’il peut s’agir d’un doublon.",
-        "busy": "Vous avez envoyé beaucoup de messages. Merci de patienter une minute avant de réessayer. Ce dernier message n’a pas été transmis.",
-        "command": "Commande inconnue. Utilisez /help ou envoyez un message sans commande pour le transmettre à l’équipe.",
-    },
-    "en": {
-        "start": "Hello. This bot sends your messages to the volunteer VSS team (support concerning sexual and gender-based violence). Share your location and what you feel comfortable telling the team. Text, photos, documents and voice messages are accepted.\n\nYour Telegram name and profile will be shared with your message. See /privacy for details. Team members contact you separately depending on availability; this bot is not an emergency service.",
-        "privacy": "Your messages and Telegram identity are shared with the configured VSS team group. This is not anonymous. The bot does not save report content or identities to files or a database. Telegram and group members may retain messages. Technical bot logs do not contain report text. Contact the team for requests concerning your messages. Avoid unnecessary personal information.",
-        "sent": "✅ Message delivered to the VSS team group. This does not mean a volunteer has read it yet. The team may contact you through Telegram depending on availability.",
-        "failed": "⚠️ Delivery could not be confirmed. Your message may have arrived. Contact the team directly if needed; if you retry, mention that it may be a duplicate.",
-        "busy": "You have sent many messages. Please wait a minute before trying again. This last message was not sent to the team.",
-        "command": "Unknown command. Use /help, or send a message without a command to contact the team.",
-    },
+    'start': 'Hello. If you feel unsafe or uncomfortable at an École Polytechnique social event, you can use this bot to discreetly alert the trained VSS responders on duty. Share your exact location (event, room or nearby landmark) and what help you need, at your own pace. Text, photos, documents and voice messages are accepted.\n\nYour message, Telegram name and profile will be shared with the response team so they can contact you and, where possible, come to your location. See /privacy for details. Availability depends on the team on duty; this bot is not an emergency service.',
+    'privacy': 'Your messages and Telegram identity are shared with the configured VSS team group. This is not anonymous. The bot does not save report content or identities to files or a database. Telegram and group members may retain messages. Technical bot logs do not contain report text. Contact the team for requests concerning your messages. Avoid unnecessary personal information.',
+    'sent': '✅ Your message has been sent to the VSS response team. A responder can contact you via Telegram and, where possible, come to your location. Delivery does not mean someone has read it yet; response depends on the team on duty.',
+    'failed': '⚠️ Delivery could not be confirmed. Your message may have arrived. Contact the team directly if needed; if you retry, mention that it may be a duplicate.',
+    'busy': 'You have sent many messages. Please wait a minute before trying again. This last message was not sent to the team.',
+    'command': 'Unknown command. Use /help, or send a message without a command to contact the team.',
 }
 
 
@@ -111,11 +101,6 @@ class RelayState:
         return allowed
 
 
-def language(update):
-    code = getattr(update.effective_user, "language_code", "") or ""
-    return "fr" if code.lower().startswith("fr") else "en"
-
-
 def private_message(update):
     return (update.message is not None and update.effective_user is not None
             and update.effective_chat is not None and update.effective_chat.type == "private")
@@ -145,17 +130,17 @@ async def respond(message, text):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if private_message(update):
-        await respond(update.message, TEXT[language(update)]["start"])
+        await respond(update.message, TEXT["start"])
 
 
 async def privacy(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if private_message(update):
-        await respond(update.message, TEXT[language(update)]["privacy"])
+        await respond(update.message, TEXT["privacy"])
 
 
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if private_message(update):
-        await respond(update.message, TEXT[language(update)]["command"])
+        await respond(update.message, TEXT["command"])
 
 
 async def forward_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -170,7 +155,7 @@ async def forward_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if fresh and not state.allow(user.id, settings.messages_per_minute):
         state.deliveries.pop(key, None)
-        await respond(message, TEXT[language(update)]["busy"])
+        await respond(message, TEXT["busy"])
         return
     target = {"chat_id": settings.chat_id, "protect_content": True}
     if settings.thread_id is not None:
@@ -179,10 +164,10 @@ async def forward_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if delivery.header_id is None:
             # Keep identity separate: long texts and original captions stay intact.
             name = html.escape((user.full_name or "Unknown")[:200])
-            label = html.escape(f"@{user.username}" if user.username else "profil / profile")
-            header = (f"📩 VSS · Réf. {message.chat_id}:{message.message_id}\n"
+            label = html.escape(f"@{user.username}" if user.username else "profile")
+            header = (f"📩 VSS · Ref. {message.chat_id}:{message.message_id}\n"
                       f'{name} — <a href="tg://user?id={user.id}">{label}</a>\n'
-                      "Identité partagée avec l’équipe / Identity shared with the team")
+                      "Identity shared with the response team")
             sent = await telegram_call(context.bot.send_message, **target,
                                        text=header, parse_mode="HTML", disable_web_page_preview=True)
             delivery.header_id = sent.message_id
@@ -194,15 +179,15 @@ async def forward_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except (BadRequest, Forbidden, NetworkError, TelegramError) as exc:
         # Never log exception text/tracebacks: URLs may contain bot credentials.
         LOG.warning("Team delivery not confirmed (%s)", type(exc).__name__)
-        await respond(message, TEXT[language(update)]["failed"])
+        await respond(message, TEXT["failed"])
         return
-    delivery.acknowledged = await respond(message, TEXT[language(update)]["sent"])
+    delivery.acknowledged = await respond(message, TEXT["sent"])
 
 
 async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE):
     LOG.error("Unhandled update failure (%s)", type(context.error).__name__)
     if isinstance(update, Update) and private_message(update):
-        await respond(update.message, TEXT[language(update)]["failed"])
+        await respond(update.message, TEXT["failed"])
 
 
 async def post_init(app):
@@ -211,9 +196,9 @@ async def post_init(app):
     if chat.type not in ("group", "supergroup"):
         raise ValueError("TARGET_CHAT_ID must identify a group or supergroup.")
     await app.bot.set_my_commands([
-        BotCommand("start", "Contacter l’équipe / Contact the team"),
-        BotCommand("help", "Fonctionnement / How it works"),
-        BotCommand("privacy", "Confidentialité / Privacy"),
+        BotCommand("start", "Contact the event response team"),
+        BotCommand("help", "How it works"),
+        BotCommand("privacy", "Privacy and data sharing"),
     ])
     LOG.info("VSS relay initialized")
 
